@@ -1,0 +1,532 @@
+<Window x:Class="WinTools.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:WinTools"
+        mc:Ignorable="d"
+        Title="WinTools"
+        Height="600"
+        Width="800"
+        Background="Transparent"
+        Foreground="{StaticResource ForegroundBrush}"
+        WindowStartupLocation="CenterScreen"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        ResizeMode="CanResizeWithGrip"
+        BorderThickness="0"
+        WindowChrome.WindowChrome="{x:Null}"
+        Icon="Resources/Icons/icons32x32.ico">
+
+    <Border Background="{StaticResource BackgroundBrush}" CornerRadius="10">
+        <Grid>
+        <Grid.Resources>
+
+            <!-- Estilo personalizado para Switch (ToggleButton) -->
+            <Style x:Key="CustomSwitchStyle" TargetType="ToggleButton">
+                <Setter Property="Width" Value="40"/>
+                <Setter Property="Height" Value="20"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ToggleButton">
+                            <Grid>
+                                <Border x:Name="BackgroundBorder"
+                                        Background="{StaticResource BorderBrush}"
+                                        CornerRadius="10"
+                                        BorderThickness="1"
+                                        BorderBrush="{StaticResource BorderBrush}"/>
+
+                                <Border x:Name="SwitchBorder"
+                                        Width="16"
+                                        Height="16"
+                                        Background="{StaticResource SecondaryForegroundBrush}"
+                                        CornerRadius="8"
+                                        HorizontalAlignment="Left"
+                                        Margin="2,0,0,0"
+                                        BorderThickness="0">
+                                    <TextBlock x:Name="SwitchText"
+                                               Text="OFF"
+                                               FontSize="7"
+                                               FontWeight="Bold"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"
+                                               Foreground="{StaticResource BackgroundBrush}"/>
+                                </Border>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsChecked" Value="True">
+                                    <Setter TargetName="BackgroundBorder" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                    <Setter TargetName="SwitchBorder" Property="HorizontalAlignment" Value="Right"/>
+                                    <Setter TargetName="SwitchBorder" Property="Margin" Value="0,0,2,0"/>
+                                    <Setter TargetName="SwitchBorder" Property="Background" Value="White"/>
+                                    <Setter TargetName="SwitchText" Property="Text" Value="ON"/>
+                                    <Setter TargetName="SwitchText" Property="Foreground" Value="{StaticResource AccentBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Estilo personalizado para ContextMenu -->
+            <Style x:Key="CustomContextMenuStyle" TargetType="ContextMenu">
+                <Setter Property="Background" Value="{StaticResource BackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="2"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ContextMenu">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="8"
+                                    Padding="{TemplateBinding Padding}">
+                                <ScrollViewer CanContentScroll="true" Style="{DynamicResource {ComponentResourceKey ResourceId=MenuScrollViewer, TypeInTargetAssembly={x:Type FrameworkElement}}}">
+                                    <ItemsPresenter KeyboardNavigation.DirectionalNavigation="Cycle" />
+                                </ScrollViewer>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Estilo personalizado para MenuItem -->
+            <Style x:Key="CustomMenuItemStyle" TargetType="MenuItem">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Padding" Value="8,4"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="MenuItem">
+                            <Border x:Name="Border"
+                                    Background="{TemplateBinding Background}"
+                                    CornerRadius="4"
+                                    Margin="1"
+                                    Padding="{TemplateBinding Padding}">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- CheckBox para items checkables -->
+                                    <CheckBox x:Name="CheckBox"
+                                             Grid.Column="0"
+                                             IsChecked="{Binding IsChecked, RelativeSource={RelativeSource TemplatedParent}, Mode=TwoWay}"
+                                             Margin="0,0,8,0"
+                                             VerticalAlignment="Center"
+                                             Foreground="{StaticResource AccentBrush}"
+                                             IsEnabled="False"
+                                             Focusable="False">
+                                        <CheckBox.Style>
+                                            <Style TargetType="CheckBox">
+                                                <Setter Property="Visibility" Value="Collapsed"/>
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding IsCheckable, RelativeSource={RelativeSource AncestorType=MenuItem}}" Value="True">
+                                                        <Setter Property="Visibility" Value="Visible"/>
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </CheckBox.Style>
+                                    </CheckBox>
+
+                                    <!-- Header del menú -->
+                                    <ContentPresenter x:Name="HeaderPresenter"
+                                                    Grid.Column="1"
+                                                    Content="{TemplateBinding Header}"
+                                                    ContentSource="Header"
+                                                    VerticalAlignment="Center"
+                                                    RecognizesAccessKey="True"/>
+
+                                    <!-- Flecha para submenús -->
+                                    <Path x:Name="Arrow"
+                                          Grid.Column="2"
+                                          Data="M 0 0 L 4 4 L 0 8 Z"
+                                          Fill="{StaticResource ForegroundBrush}"
+                                          HorizontalAlignment="Right"
+                                          VerticalAlignment="Center"
+                                          Margin="8,0,0,0"
+                                          Visibility="Collapsed"/>
+                                </Grid>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsHighlighted" Value="True">
+                                    <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Foreground" Value="{StaticResource SecondaryForegroundBrush}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Estilo personalizado para menú contextual de bandeja -->
+            <Style x:Key="TrayContextMenuStyle" TargetType="ContextMenu">
+                <Setter Property="Background" Value="{StaticResource BackgroundBrush}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Padding" Value="0"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="ContextMenu">
+                            <Border Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="8"
+                                    Padding="{TemplateBinding Padding}"
+                                    Effect="{DynamicResource ShadowEffect}">
+                                <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Cycle"/>
+                            </Border>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Estilo personalizado para items del menú contextual de bandeja -->
+            <Style x:Key="TrayMenuItemStyle" TargetType="MenuItem">
+                <Setter Property="Background" Value="Transparent"/>
+                <Setter Property="Foreground" Value="{StaticResource ForegroundBrush}"/>
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Padding" Value="12,8"/>
+                <Setter Property="Cursor" Value="Hand"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="MenuItem">
+                            <Border x:Name="Border"
+                                    Background="{TemplateBinding Background}"
+                                    Padding="{TemplateBinding Padding}">
+                                <ContentPresenter HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                                <Trigger Property="IsHighlighted" Value="True">
+                                    <Setter TargetName="Border" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                    <Setter Property="Foreground" Value="White"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <!-- Efecto de sombra para el menú -->
+            <DropShadowEffect x:Key="ShadowEffect"
+                              Color="Black"
+                              Direction="315"
+                              ShadowDepth="3"
+                              Opacity="0.3"
+                              BlurRadius="8"/>
+
+        </Grid.Resources>
+
+        <!-- Barra de título personalizada -->
+        <Border x:Name="TitleBar"
+                Height="32"
+                VerticalAlignment="Top"
+                HorizontalAlignment="Stretch"
+                Background="{StaticResource BackgroundBrush}"
+                BorderThickness="0"
+                CornerRadius="10,10,0,0"
+                Margin="0,-1,0,0"
+                MouseLeftButtonDown="TitleBar_MouseLeftButtonDown">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Botón de opciones con icono de aplicación -->
+                <Button x:Name="OptionsButton"
+                        Grid.Column="0"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Width="32"
+                        Height="32"
+                        Click="OptionsButton_Click"
+                        ToolTip="Opciones"
+                        VerticalAlignment="Center"
+                        Margin="10,0,5,0"
+                        Padding="8">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="Transparent">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                    <Image Source="/Resources/Icons/icons16x16.ico"
+                           Width="16"
+                           Height="16"
+                           Stretch="Uniform"/>
+                    <Button.ContextMenu>
+                        <ContextMenu Style="{StaticResource CustomContextMenuStyle}">
+                            <MenuItem Header="Iniciar con Windows" x:Name="AutostartMenuItem" IsCheckable="True" Style="{StaticResource CustomMenuItemStyle}" Checked="AutostartMenuItem_Checked" Unchecked="AutostartMenuItem_Unchecked"/>
+                        </ContextMenu>
+                    </Button.ContextMenu>
+                </Button>
+
+                <!-- Título de la aplicación -->
+                <TextBlock Grid.Column="1"
+                          Text="WinTools"
+                          FontSize="12"
+                          FontWeight="SemiBold"
+                          Foreground="{StaticResource ForegroundBrush}"
+                          VerticalAlignment="Center"
+                          Margin="5,0,0,0"/>
+
+                <!-- Botón minimizar -->
+                <Button x:Name="MinimizeButton"
+                        Grid.Column="2"
+                        Content="🗕"
+                        Width="40"
+                        Height="32"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Foreground="{StaticResource ForegroundBrush}"
+                        FontSize="10"
+                        Click="MinimizeButton_Click"
+                        ToolTip="Minimizar"
+                        VerticalAlignment="Stretch">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="Transparent">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#33FFFFFF"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+
+                <!-- Botón cerrar -->
+                <Button x:Name="CloseButton"
+                        Grid.Column="3"
+                        Content="✕"
+                        Width="40"
+                        Height="32"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Foreground="{StaticResource ForegroundBrush}"
+                        FontSize="12"
+                        Click="CloseButton_Click"
+                        ToolTip="Cerrar"
+                        VerticalAlignment="Stretch">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border Background="Transparent">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter Property="Background" Value="#FFE81123"/>
+                                                <Setter Property="Foreground" Value="White"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </Button.Style>
+                </Button>
+            </Grid>
+        </Border>
+
+        <!-- Pantalla de carga -->
+        <StackPanel x:Name="LoadingScreen" HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,32,0,0">
+            <TextBlock
+                Text="Bienvenido a WinTools"
+                FontSize="48"
+                FontWeight="Bold"
+                Foreground="{StaticResource ForegroundBrush}"
+                HorizontalAlignment="Center"
+                Margin="0,0,0,20"/>
+
+            <TextBlock
+                Text="Iniciando aplicación..."
+                FontSize="18"
+                Foreground="{StaticResource SecondaryForegroundBrush}"
+                HorizontalAlignment="Center"
+                Margin="0,0,0,20"/>
+
+            <!-- Ícono de carga circular -->
+            <Viewbox Width="40" Height="40" HorizontalAlignment="Center">
+                <Canvas Width="24" Height="24">
+                    <!-- Anillo exterior -->
+                    <Ellipse
+                        Width="20"
+                        Height="20"
+                        Stroke="{StaticResource AccentBrush}"
+                        StrokeThickness="3"
+                        Canvas.Left="2"
+                        Canvas.Top="2"
+                        Opacity="0.3"/>
+
+                    <!-- Segmento giratorio -->
+                    <Path
+                        x:Name="LoadingSegment"
+                        Data="M0,-8 A8,8 0 0,1 8,0"
+                        Stroke="{StaticResource AccentBrush}"
+                        StrokeThickness="3"
+                        StrokeStartLineCap="Round"
+                        StrokeEndLineCap="Round"
+                        Canvas.Left="12"
+                        Canvas.Top="12"
+                        RenderTransformOrigin="0,0">
+                        <Path.RenderTransform>
+                            <RotateTransform x:Name="SegmentRotation" Angle="0"/>
+                        </Path.RenderTransform>
+                        <Path.Triggers>
+                            <EventTrigger RoutedEvent="Path.Loaded">
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimation
+                                            Storyboard.TargetName="SegmentRotation"
+                                            Storyboard.TargetProperty="Angle"
+                                            From="0"
+                                            To="360"
+                                            Duration="0:0:1"
+                                            RepeatBehavior="Forever"/>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </EventTrigger>
+                        </Path.Triggers>
+                    </Path>
+                </Canvas>
+            </Viewbox>
+        </StackPanel>
+
+        <!-- Secciones principales (inicialmente ocultas) -->
+        <ScrollViewer x:Name="MainSections" Visibility="Collapsed" VerticalScrollBarVisibility="Auto" Margin="0,32,0,0">
+            <Grid Margin="15">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <!-- Primera sección: Información del sistema -->
+                <Border Background="{StaticResource BackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="10" Margin="0,0,0,10" Padding="15" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Columna izquierda -->
+                        <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                            <!-- RAM -->
+                            <StackPanel Margin="0,0,0,12">
+                                <TextBlock Text="RAM" FontSize="14" Foreground="{StaticResource ForegroundBrush}"/>
+                                <TextBlock x:Name="RamTextBlock" Text="6.5 GB / 10 GB" FontSize="12" Foreground="{StaticResource SecondaryForegroundBrush}" Margin="0,2,0,0"/>
+                            </StackPanel>
+
+                            <!-- CPU -->
+                            <StackPanel Margin="0,0,0,12">
+                                <TextBlock Text="CPU" FontSize="14" Foreground="{StaticResource ForegroundBrush}"/>
+                                <TextBlock x:Name="CpuTextBlock" Text="Intel Core i3-1215U - 45%" FontSize="12" Foreground="{StaticResource SecondaryForegroundBrush}" Margin="0,2,0,0"/>
+                            </StackPanel>
+
+                            <!-- GPU -->
+                            <StackPanel Margin="0,0,0,0">
+                                <TextBlock Text="GPU" FontSize="14" Foreground="{StaticResource ForegroundBrush}"/>
+                                <TextBlock x:Name="GpuTextBlock" Text="Intel UHD Graphics - 30%" FontSize="12" Foreground="{StaticResource SecondaryForegroundBrush}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+
+                        <!-- Columna derecha -->
+                        <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                            <!-- Temperatura -->
+                            <StackPanel Margin="0,0,0,12">
+                                <TextBlock Text="Temperatura" FontSize="14" Foreground="{StaticResource ForegroundBrush}"/>
+                                <TextBlock x:Name="TempTextBlock" Text="55°C" FontSize="12" Foreground="{StaticResource SecondaryForegroundBrush}" Margin="0,2,0,0"/>
+                            </StackPanel>
+
+                            <!-- Espacio en disco -->
+                            <StackPanel Margin="0,0,0,12">
+                                <TextBlock Text="Espacio en disco" FontSize="14" Foreground="{StaticResource ForegroundBrush}"/>
+                                <TextBlock x:Name="DiskTextBlock" Text="212.5 GB / 476.1 GB" FontSize="12" Foreground="{StaticResource SecondaryForegroundBrush}" Margin="0,2,0,0"/>
+                            </StackPanel>
+
+                            <!-- Procesos en segundo plano -->
+                            <StackPanel Margin="0,0,0,0">
+                                <TextBlock Text="Procesos en segundo plano" FontSize="14" Foreground="{StaticResource ForegroundBrush}"/>
+                                <TextBlock x:Name="ProcessesTextBlock" Text="127 procesos activos" FontSize="12" Foreground="{StaticResource SecondaryForegroundBrush}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- Segunda sección: Limpieza del sistema -->
+                <Border Background="{StaticResource BackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="10" Margin="0,0,10,0" Padding="15" Grid.Row="1" Grid.Column="0">
+                    <StackPanel>
+                        <TextBlock Text="Limpieza y Optimización" FontSize="18" FontWeight="Bold" Foreground="{StaticResource ForegroundBrush}" Margin="0,0,0,15"/>
+
+                        <Border CornerRadius="6" Background="{StaticResource BorderBrush}" Margin="0,0,0,8" MinHeight="40">
+                            <Button Content="Eliminar archivos temporales" Style="{StaticResource CustomButtonStyle}" Padding="12,20" FontSize="12" Click="EliminarTempButton_Click"/>
+                        </Border>
+                        <Border CornerRadius="6" Background="{StaticResource BorderBrush}" Margin="0,0,0,8" MinHeight="40">
+                            <Button Content="Vaciar papelera de reciclaje" Style="{StaticResource CustomButtonStyle}" Padding="12,20" FontSize="12" Click="VaciarPapeleraButton_Click"/>
+                        </Border>
+                        <Border CornerRadius="6" Background="{StaticResource BorderBrush}" Margin="0,0,0,8" MinHeight="40">
+                            <Button Content="Liberar RAM" Style="{StaticResource CustomButtonStyle}" Padding="12,20" FontSize="12" Click="LiberarRamButton_Click"/>
+                        </Border>
+                        <Border CornerRadius="6" Background="{StaticResource BorderBrush}" Margin="0,0,0,8" MinHeight="40">
+                            <Button Content="Limpiar cache DNS" Style="{StaticResource CustomButtonStyle}" Padding="12,20" FontSize="12" Click="LimpiarDnsButton_Click"/>
+                        </Border>
+                        <Border CornerRadius="6" Background="{StaticResource BorderBrush}" Margin="0,0,0,0" MinHeight="40">
+                            <Button Content="Limpiar cache Windows Update" Style="{StaticResource CustomButtonStyle}" Padding="12,20" FontSize="12" Click="LimpiarWindowsUpdateButton_Click"/>
+                        </Border>
+                    </StackPanel>
+                </Border>
+
+                <!-- Tercera sección: Widgets -->
+                <Border Background="{StaticResource BackgroundBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="10" Margin="10,0,0,0" Padding="15" Grid.Row="1" Grid.Column="1">
+                    <StackPanel>
+                        <TextBlock Text="Widgets" FontSize="18" FontWeight="Bold" Foreground="{StaticResource ForegroundBrush}" Margin="0,0,0,15"/>
+
+                        <!-- Toggle para widget de RAM -->
+                        <StackPanel Orientation="Horizontal" Margin="0,0,0,15">
+                            <TextBlock Text="Widget de Liberación RAM" FontSize="14" Foreground="{StaticResource ForegroundBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                            <ToggleButton x:Name="RamWidgetToggle" Style="{StaticResource CustomSwitchStyle}" Checked="RamWidgetToggle_Checked" Unchecked="RamWidgetToggle_Unchecked"/>
+                        </StackPanel>
+
+                        <TextBlock Text="Más widgets próximamente..." FontSize="12" Foreground="{StaticResource SecondaryForegroundBrush}" HorizontalAlignment="Center" Margin="0,10,0,0"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+        </Grid>
+    </Border>
+</Window>
