@@ -32,46 +32,6 @@ Herramientas de optimización del sistema Windows desarrolladas en C# con WPF.
 ## Requisitos
 
 - Windows 10/11 (64-bit)
-- .NET 8.0 Runtime (incluido en versiones portable e instalador)
-
-## Instalación
-
-### 🚀 Instalador EXE
-
-**Archivo**: `WinTools.Installer.exe`
-
-**Proceso de Instalación**:
-1. Descarga el archivo `.exe`
-2. Haz doble clic y ejecuta como administrador
-3. **El instalador mostrará la ruta de instalación**: `C:\Program Files\WinTools\`
-4. Puedes cambiar la ruta si lo deseas
-5. Sigue el asistente de instalación
-6. Se crean accesos directos en menú Inicio y escritorio
-
-**Características**:
-- ✅ Instalador profesional con desinstalador completo
-- ✅ Muestra la ruta de instalación durante el proceso
-- ✅ Cierra automáticamente la aplicación durante la desinstalación
-- ✅ Integración completa con Windows
-- ✅ Accesos directos en menú Inicio y escritorio
-4. Puede ejecutarse desde USB o cualquier ubicación
-
-**Ventajas**:
-- ✅ No requiere instalación
-- ✅ Completamente portable
-- ✅ Sin residuos en el sistema
-- ✅ Ideal para múltiples PCs o USB
-
-### ✅ Verificación de Instalación
-
-Después de instalar/ejecutar, verifica que:
-
-1. **La aplicación inicia correctamente**
-2. **El monitor de sistema muestra datos** (CPU, RAM, etc.)
-3. **Las funciones de limpieza funcionan** (botones responden)
-4. **La opción "Iniciar con Windows" funciona** (si está activada)
-
-**Nota**: Ambas versiones incluyen el runtime de .NET 8, por lo que no requieren instalación adicional de .NET en los PCs destino.
 
 ## Compilación
 
@@ -150,21 +110,6 @@ dotnet build
 dotnet run
 ```
 
-### Flujo de Trabajo
-
-1. **Desarrollo**: Modifica código en Visual Studio
-2. **Pruebas**: Ejecuta con `dotnet run`
-3. **Compilación**: Usa `.\build.ps1` para crear el instalador
-4. **Distribución**: El instalador está en `publish\WinTools.Installer.exe`
-
-## Notas de Distribución
-
-- La aplicación es **self-contained**: incluye el runtime de .NET 8
-- No requiere instalación de .NET en los PCs destino
-- Compatible con Windows 10/11 x64
-- Instalador incluye desinstalador completo y accesos directos
-- Desinstalador cierra automáticamente la aplicación si está ejecutándose
-
 ## 🆘 Solución de Problemas
 
 ### Problemas Comunes
@@ -206,17 +151,3 @@ dotnet publish -c Release -r win-x64 --self-contained true -v detailed
 .\build.ps1 -Portable -Verbose
 ```
 
-## 📞 Soporte
-
-Si encuentras problemas:
-
-1. Verifica esta documentación
-2. Revisa los [issues](https://github.com/tu-repo/WinTools/issues) del proyecto
-3. Crea un nuevo issue con:
-   - Versión de Windows
-   - Versión de .NET SDK (`dotnet --version`)
-   - Error completo y pasos para reproducirlo
-
-## 📄 Licencia
-
-Este proyecto es de código abierto. Modifícalo y distribúyelo según tus necesidades.
