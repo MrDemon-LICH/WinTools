@@ -35,6 +35,7 @@ namespace WinTools
             public double Top { get; set; } = 0;
         }
 
+
         // P/Invoke para arrastrar la ventana y eliminar bordes
         [DllImport("user32.dll")]
         private static extern void ReleaseCapture();
@@ -105,6 +106,20 @@ namespace WinTools
                 // Verificar si se debe iniciar minimizado (desde autostart)
                 bool shouldStartMinimized = App.ShouldStartMinimized;
 
+                // Verificar si el widget debe mostrarse (incluso si se inicia minimizado)
+                try
+                {
+                    var settings = LoadWidgetSettings();
+                    if (settings.IsEnabled)
+                    {
+                        MostrarRamWidget();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"Error al cargar widget al iniciar: {ex.Message}");
+                }
+
                 // Operaciones pesadas se ejecutan después de que la ventana sea visible
                 this.ContentRendered += (s, e) =>
                 {
@@ -161,6 +176,13 @@ namespace WinTools
                     _notifyIcon = null;
                 }
 
+                // Configurar toggle del menú contextual
+                ContextMenuTweakToggle.Checked += ContextMenuTweakToggle_Checked;
+                ContextMenuTweakToggle.Unchecked += ContextMenuTweakToggle_Unchecked;
+
+                // Cargar estado inicial del tweak
+                LoadContextMenuTweakState();
+
                 // Deferir inicialización de contadores de rendimiento hasta después de mostrar ventana
                 this.Loaded += (s, e) =>
                 {
@@ -197,6 +219,7 @@ namespace WinTools
 
                 // Cargar configuración guardada después de que se cargue
                 Loaded += MainWindow_Loaded;
+
             }
             catch (Exception ex)
             {
@@ -243,6 +266,64 @@ namespace WinTools
             }
 
             return new RamWidgetConfig();
+        }
+
+
+
+
+        private void ContextMenuTweakToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            SaveContextMenuTweakState(true);
+        }
+
+        private void ContextMenuTweakToggle_Unchecked(object sender, RoutedEventArgs e)
+        {
+            SaveContextMenuTweakState(false);
+        }
+
+        private void SaveContextMenuTweakState(bool enabled)
+        {
+            try
+            {
+                // Guardar estado en registro para que se aplique al reiniciar el sistema
+                string command = enabled
+                    ? "add \"HKCU\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\\InprocServer32\" /f /ve"
+                    : "delete \"HKCU\\Software\\Classes\\CLSID\\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\" /f";
+
+                var process = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = "reg.exe",
+                        Arguments = command,
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+
+                process.Start();
+                process.WaitForExit();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error saving context menu tweak state: {ex.Message}");
+            }
+        }
+
+        private void LoadContextMenuTweakState()
+        {
+            try
+            {
+                // Leer el estado actual del registro para mostrar el toggle correcto
+                var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                    @"Software\Classes\CLSID\{86ca1aa0-34aa-4e8b-a509-50c905bae2a2}\InprocServer32");
+
+                ContextMenuTweakToggle.IsChecked = key != null;
+            }
+            catch
+            {
+                ContextMenuTweakToggle.IsChecked = false;
+            }
         }
 
         private void LoadingTimer_Tick(object? sender, EventArgs e)
@@ -483,28 +564,6 @@ namespace WinTools
 
                 // Aplicar el estado guardado del switch
                 RamWidgetToggle.IsChecked = settings.IsEnabled;
-
-                // Si estaba activado, mostrar el widget
-                if (settings.IsEnabled)
-                {
-                    try
-                    {
-                        MostrarRamWidget();
-                    }
-                    catch (Exception ex)
-                    {
-                        // Si hay error al mostrar el widget, desactivar el switch
-                        RamWidgetToggle.IsChecked = false;
-                        settings.IsEnabled = false;
-                        SaveWidgetSettings(settings);
-
-                        CustomDialog.Show(
-                            "Error al restaurar",
-                            $"Error al restaurar el widget: {ex.Message}\n\nEl widget ha sido desactivado.",
-                            CustomDialog.DialogType.OK,
-                            CustomDialog.IconType.Warning);
-                    }
-                }
             }
             catch (Exception ex)
             {
@@ -617,6 +676,7 @@ namespace WinTools
         {
             DisableAutostart();
         }
+
 
         private string GetExecutablePath()
         {
@@ -875,6 +935,90 @@ namespace WinTools
                 // En caso de error, mantener valores por defecto
                 Debug.WriteLine($"Error updating system info: {ex.Message}");
                 RamTextBlock.Text = "Error al obtener RAM";
+            }
+        }
+
+        private void RestartWindowsExplorer()
+        {
+            try
+            {
+                // Mostrar progreso del reinicio
+                var (progressWindow, textBlock) = CreateProgressWindow("Reiniciando Windows Explorer...", "Aplicando cambios al menú contextual...");
+                progressWindow.Show();
+
+                System.Threading.ThreadPool.QueueUserWorkItem(_ =>
+                {
+                    try
+                    {
+                        // Cerrar procesos de explorer.exe
+                        textBlock.Dispatcher.Invoke(() => textBlock.Text = "Cerrando Windows Explorer...");
+                        System.Threading.Thread.Sleep(500);
+
+                        var explorerProcesses = Process.GetProcessesByName("explorer");
+                        foreach (var process in explorerProcesses)
+                        {
+                            try
+                            {
+                                process.Kill();
+                                process.WaitForExit(2000);
+                            }
+                            catch
+                            {
+                                // Ignorar errores al cerrar procesos
+                            }
+                        }
+
+                        // Reiniciar explorer.exe
+                        textBlock.Dispatcher.Invoke(() => textBlock.Text = "Reiniciando Windows Explorer...");
+                        System.Threading.Thread.Sleep(1000);
+
+                        Process.Start("explorer.exe");
+
+                        // Cerrar ventana de progreso
+                        progressWindow.Dispatcher.Invoke(() => progressWindow.Close());
+
+                        // Mostrar confirmación
+                        System.Threading.ThreadPool.QueueUserWorkItem(__ =>
+                        {
+                            System.Threading.Thread.Sleep(200);
+                            Dispatcher.Invoke(() =>
+                            {
+                                CustomDialog.Show(
+                                    "Reinicio completado",
+                                    "✅ Windows Explorer se ha reiniciado correctamente\n\n" +
+                                    "Los cambios en el menú contextual ya están aplicados.",
+                                    CustomDialog.DialogType.OK,
+                                    CustomDialog.IconType.Information);
+                            });
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        progressWindow.Dispatcher.Invoke(() => progressWindow.Close());
+
+                        System.Threading.ThreadPool.QueueUserWorkItem(__ =>
+                        {
+                            System.Threading.Thread.Sleep(200);
+                            Dispatcher.Invoke(() =>
+                            {
+                                CustomDialog.Show(
+                                    "Error al reiniciar",
+                                    $"Error durante el reinicio de Windows Explorer:\n\n{ex.Message}\n\n" +
+                                    "Puede reiniciarlo manualmente desde el Administrador de Tareas.",
+                                    CustomDialog.DialogType.OK,
+                                    CustomDialog.IconType.Error);
+                            });
+                        });
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                CustomDialog.Show(
+                    "Error",
+                    $"Error al iniciar el reinicio: {ex.Message}",
+                    CustomDialog.DialogType.OK,
+                    CustomDialog.IconType.Error);
             }
         }
 

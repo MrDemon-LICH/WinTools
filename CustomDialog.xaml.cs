@@ -144,36 +144,29 @@ namespace WinTools
             Close();
         }
 
-        // Métodos estáticos para facilitar el uso
+        // Método síncrono que usa ShowDialog() pero sin Owner para evitar problemas de foco
         public static DialogResult Show(string title, string message, DialogType type = DialogType.OK, IconType icon = IconType.None)
         {
-            // Encontrar la ventana principal como owner
-            Window? owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ??
-                           Application.Current?.MainWindow;
-
+            // Usar la ventana principal como owner para centrar correctamente
+            var owner = Application.Current?.MainWindow;
             var dialog = new CustomDialog(title, message, type, icon, owner);
-            return dialog.ShowDialog();
+
+            // Usar ShowDialog() que centra en el owner
+            var result = dialog.ShowDialog();
+
+            // Devolver el resultado almacenado en el diálogo
+            return dialog._result;
         }
 
         public static bool ShowQuestion(string title, string message)
         {
-            // Encontrar la ventana principal como owner
-            Window? owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ??
-                           Application.Current?.MainWindow;
-
-            var dialog = new CustomDialog(title, message, DialogType.YesNo, IconType.Question, owner);
-            var result = dialog.ShowDialog();
+            var result = Show(title, message, DialogType.YesNo, IconType.Question);
             return result == DialogResult.Yes;
         }
 
         public static bool ShowWarning(string title, string message)
         {
-            // Encontrar la ventana principal como owner
-            Window? owner = Application.Current?.Windows.OfType<Window>().FirstOrDefault(w => w.IsActive) ??
-                           Application.Current?.MainWindow;
-
-            var dialog = new CustomDialog(title, message, DialogType.YesNo, IconType.Warning, owner);
-            var result = dialog.ShowDialog();
+            var result = Show(title, message, DialogType.YesNo, IconType.Warning);
             return result == DialogResult.Yes;
         }
     }
